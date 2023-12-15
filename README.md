@@ -11,6 +11,7 @@ pip install -r requirements.txt
 
 Obtain the raw dataset:
 Download the raw dataset from the resources above, and save them to the same folder. 
+
 braindecode package is directly copied from https://github.com/robintibor/braindecode/tree/master/braindecode for preparing datasets
 
 Start:
