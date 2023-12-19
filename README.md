@@ -2,7 +2,9 @@
 
 Paper link:
 
-Resources:openBMI:( http://dx.doi.org/10.5524/100542)
+Resources:
+BCI IV 2a：(https://www.bbci.de/competition/iv/)
+openBMI:( http://dx.doi.org/10.5524/100542)
 
 
 Install the dependencies:
