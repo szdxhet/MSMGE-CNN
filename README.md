@@ -1,6 +1,5 @@
 # MSMGENet：Multi-scale multi-graph embedding based EEG decoding of motor intentions
 
-Paper link:
 
 Resources:
 BCI IV 2a：(https://www.bbci.de/competition/iv/)
