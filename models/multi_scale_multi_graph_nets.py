@@ -44,7 +44,6 @@ class Conv2dWithConstraint(nn.Conv2d):
 
     def forward(self, x):
         if self.max_norm is not None:
-            #th.renorm:返回一个张量，其中沿维度dim(0)输入的每个子张量被归一化，使得子张量的p(2)范数低于值maxnorm(1)
             self.weight.data = th.renorm(self.weight.data, p=2, dim=0,
                                          maxnorm=self.max_norm)
         return super(Conv2dWithConstraint, self).forward(x)
@@ -87,7 +86,6 @@ def _squeeze_final_output(x):
         x = x[:, :, 0]
     return x
 
-#使用邻接矩阵中的节点值初始化权重参数，这些参数是可学习的。邻接矩阵的下三角部分被提取为一维索引 (self.xs, self.ys)，然后对应的节点值用于初始化权重参数
 class GraphEmbedding(nn.Module):
     def __init__(self,
                  n_nodes,
@@ -99,81 +97,45 @@ class GraphEmbedding(nn.Module):
         super(GraphEmbedding, self).__init__()
         self.__dict__.update(locals())
         del self.self
-        self.xs, self.ys = th.tril_indices(self.n_nodes, self.n_nodes, offset=-1)#th.tril_indices 是PyTorch中的函数，用于返回下三角矩阵的非零元素的索引。offset=-1 表示只考虑下三角的非零元素。
-        #self.xs 和 self.ys 分别包含了下三角矩阵中非零元素的行和列索引。使用上一步得到的索引 self.xs 和 self.ys 从邻接矩阵 adj1 中提取对应位置的节点值，形成一维数组 node_value1
+        self.xs, self.ys = th.tril_indices(self.n_nodes, self.n_nodes, offset=-1)
         node_value1 = adj1[self.xs, self.ys]
         node_value2 = adj2[self.xs, self.ys]
-        self.edge_weight1 = nn.Parameter(node_value1.clone().detach(), requires_grad=self.adj_learn)#node_value1.clone().detach() 创建了一个新的张量，其值和 node_value1 一样，但不再与计算图关联
-        #nn.Parameter 将这个张量转换为可学习的参数，即权重参数。 requires_grad=self.adj_learn 控制是否对这个参数进行梯度计算，根据 adj_learn 的值决定是否学习邻接矩阵的参数。
+        self.edge_weight1 = nn.Parameter(node_value1.clone().detach(), requires_grad=self.adj_learn)
         self.edge_weight2 = nn.Parameter(node_value2.clone().detach(), requires_grad=self.adj_learn)
 
-    def forward(self, x):#X(8,22,1158)
-        edge_weight1 = th.zeros([self.n_nodes, self.n_nodes], device=x.device)#初始化零矩阵 edge_weight1 和 edge_weight2
+    def forward(self, x):
+        edge_weight1 = th.zeros([self.n_nodes, self.n_nodes], device=x.device)
         edge_weight2 = th.zeros([self.n_nodes, self.n_nodes], device=x.device)
 
-        xx = self.xs.to(x.device)#231
-        yy = self.ys.to(x.device)#231
-        ee1 = self.edge_weight1.to(x.device)#231
-        ee2 = self.edge_weight2.to(x.device)  # 231
+        xx = self.xs.to(x.device)
+        yy = self.ys.to(x.device)
+        ee1 = self.edge_weight1.to(x.device)
+        ee2 = self.edge_weight2.to(x.device)  
 
-        edge_weight1[xx, yy] = ee1#(22,22)
-        edge_weight2[xx, yy] = ee2  # (22,22)
-        #将权重赋值给相应的位置，然后对称化处理，最后进行归一化。
+        edge_weight1[xx, yy] = ee1
+        edge_weight2[xx, yy] = ee2 
+       
         edge_weight1 = edge_weight1 + edge_weight1.T + th.eye(self.n_nodes, dtype=edge_weight1.dtype, device=x.device)
         edge_weight2 = edge_weight2 + edge_weight2.T + th.eye(self.n_nodes, dtype=edge_weight2.dtype, device=x.device)
         edge_weight1 = normalize_adj(edge_weight1, mode='row')
         edge_weight2 = normalize_adj(edge_weight2, mode='row')
         x_out = [x]
-        #for k in range(self.k):
-        #unsqueeze()函数起升维的作用,参数表示在哪个地方加一个维度。
-        #torch.matmul是tensor的乘法，输入可以是高维的。 这里用于将权重与输入特征相乘。
-        # edge_weight1_two = th.matmul(edge_weight1,edge_weight1)
-        # edge_weight2_two = th.matmul(edge_weight2, edge_weight2)
-        # edge_weight1_three = th.matmul(edge_weight1_two, edge_weight1)
-        # edge_weight2_three = th.matmul(edge_weight2_two, edge_weight2)
-        # if self.k==2:
-        #     x1 = th.matmul(edge_weight1.unsqueeze(0), x)  # (8,22,1158)
-        #     x2 = th.matmul(edge_weight2.unsqueeze(0), x)  # (8,22,1158)
-        #     x3 = th.matmul(edge_weight1_two.unsqueeze(0), x)  # (8,22,1158)
-        #     x4 = th.matmul(edge_weight2_two.unsqueeze(0), x)  # (8,22,1158)
-        #     x_out.append(x1)  # list:2
-        #     x_out.append(x2)  # list:3
-        #     x_out.append(x3)  # list:2
-        #     x_out.append(x4)  # list:3
-        # elif self.k==3:
-        #     x1 = th.matmul(edge_weight1.unsqueeze(0), x)  # (8,22,1158)
-        #     x2 = th.matmul(edge_weight2.unsqueeze(0), x)  # (8,22,1158)
-        #     x3 = th.matmul(edge_weight1_two.unsqueeze(0), x)  # (8,22,1158)
-        #     x4 = th.matmul(edge_weight2_two.unsqueeze(0), x)  # (8,22,1158)
-        #     x5 = th.matmul(edge_weight1_three.unsqueeze(0), x)  # (8,22,1158)
-        #     x6 = th.matmul(edge_weight2_three.unsqueeze(0), x)  # (8,22,1158)
-        #     x_out.append(x1)  # list:2
-        #     x_out.append(x2)  # list:3
-        #     x_out.append(x3)  # list:2
-        #     x_out.append(x4)  # list:3
-        #     x_out.append(x5)  # list:2
-        #     x_out.append(x6)  # list:3
-        # else:
-        #     x1 = th.matmul(edge_weight1.unsqueeze(0), x)#(8,22,1158)
-        #     x2 = th.matmul(edge_weight2.unsqueeze(0), x)#(8,22,1158)
-        #     x_out.append(x1)#list:2
-        #     x_out.append(x2)#list:3
-        # x_out = th.stack(x_out)#Tensor (3,8,22,1158)
+   
         edge_weight1_iter = edge_weight1
         edge_weight2_iter = edge_weight2
 
         for k in range(self.k):
-            # 计算 edge_weight1^k 和 edge_weight2^k
+          
             x1 = th.matmul(edge_weight1_iter.unsqueeze(0), x)
             x2 = th.matmul(edge_weight2_iter.unsqueeze(0), x)
             x_out.append(x1)
             x_out.append(x2)
 
-            # 更新权重乘积以用于下一轮循环
+          
             edge_weight1_iter = th.matmul(edge_weight1_iter, edge_weight1)
             edge_weight2_iter = th.matmul(edge_weight2_iter, edge_weight2)
 
-        x_out = th.stack(x_out)  # Tensor (2*k+1, 8, 22, 1158)
+        x_out = th.stack(x_out)
         return x_out
 
 
@@ -181,15 +143,15 @@ class MSMGECNN(BaseModel):
     def __init__(self,
                  Adj1,
                  Adj2,
-                 in_chans,#22
-                 n_classes,#4
+                 in_chans,
+                 n_classes,
                  k=2,
-                 input_time_length=None,#1125
+                 input_time_length=None,
                  Adj_learn=False,
                  drop_prob=0.25,
                  pool_mode='mean',
                  f1=8,
-                 f2=16,  # usually set to F1*D (?)
+                 f2=16,  
                  kernel_length=64,
                  third_kernel_size=(8, 4),
                  final_conv_length='auto',
@@ -208,7 +170,7 @@ class MSMGECNN(BaseModel):
         pool_class = dict(max=nn.MaxPool2d, mean=nn.AvgPool2d)[self.pool_mode]
 
         self.temporal_conv1 = nn.Sequential(
-            Expression(_transpose_to_0312),#(34,1,64,640)
+            Expression(_transpose_to_0312),
             Conv2dWithConstraint(in_channels=1, out_channels=self.f1,
                                  kernel_size=(1, int(self.kernel_length/2)),
                                  max_norm=None,
@@ -220,7 +182,7 @@ class MSMGECNN(BaseModel):
         )
 
         self.temporal_conv2 = nn.Sequential(
-            Expression(_transpose_to_0312),  # (34,1,64,640)
+            Expression(_transpose_to_0312),  
             Conv2dWithConstraint(in_channels=1, out_channels=self.f1,
                                  kernel_size=(1, self.kernel_length),
                                  max_norm=None,
@@ -232,7 +194,7 @@ class MSMGECNN(BaseModel):
         )
 
         self.temporal_conv3 = nn.Sequential(
-            Expression(_transpose_to_0312),  # (34,1,64,640)
+            Expression(_transpose_to_0312),  
             Conv2dWithConstraint(in_channels=1, out_channels=self.f1,
                                  kernel_size=(1, int(self.kernel_length*2)),
                                  max_norm=None,
@@ -297,61 +259,61 @@ class MSMGECNN(BaseModel):
 
     def forward_init(self, x):
         with th.no_grad():
-            batch_size = x.size(0)  # x (1,22,1125,1)
+            batch_size = x.size(0) 
 
-            x1 = self.temporal_conv1(x)  # (1,8,22,1158)
-            x1 = self.ge(x1)  # （3，8 ，22，1158）
-            x1 = x1.view((2*self.k + 1), batch_size, -1, x1.size(-2), x1.size(-1))  # （3，1，8，22，1158）
-            x1 = x1.permute(1, 0, 2, 3, 4).contiguous().view(batch_size, -1, x1.size(-2),x1.size(-1))  # （1，24，22，1158）
-            x1 = self.spatial_conv(x1)  # （1，48，1，144）
-            x1 = self.separable_conv(x1)  # （1，16，1，18）
+            x1 = self.temporal_conv1(x)  
+            x1 = self.ge(x1)  
+            x1 = x1.view((2*self.k + 1), batch_size, -1, x1.size(-2), x1.size(-1)) 
+            x1 = x1.permute(1, 0, 2, 3, 4).contiguous().view(batch_size, -1, x1.size(-2),x1.size(-1)) 
+            x1 = self.spatial_conv(x1)
+            x1 = self.separable_conv(x1)  
 
-            x2 = self.temporal_conv2(x)  # (1,8,22,1126)
-            x2 = self.ge(x2)  # （3，8 ，22，1126）
-            x2 = x2.view((2*self.k + 1), batch_size, -1, x2.size(-2), x2.size(-1))  # （3，1，8，22，1126）
-            x2 = x2.permute(1, 0, 2, 3, 4).contiguous().view(batch_size, -1, x2.size(-2),x2.size(-1))  # （1，24，22，1126）
-            x2 = self.spatial_conv(x2)  # （1，48，1，140）
-            x2 = self.separable_conv(x2)  # （1，16，1，17）
+            x2 = self.temporal_conv2(x) 
+            x2 = self.ge(x2)  
+            x2 = x2.view((2*self.k + 1), batch_size, -1, x2.size(-2), x2.size(-1))  
+            x2 = x2.permute(1, 0, 2, 3, 4).contiguous().view(batch_size, -1, x2.size(-2),x2.size(-1)) 
+            x2 = self.spatial_conv(x2)  
+            x2 = self.separable_conv(x2) 
 
-            x3 = self.temporal_conv3(x)  # (1,8,22,1062)
-            x3 = self.ge(x3)  # （3，8 ，22，1062）
-            x3 = x3.view((2*self.k + 1), batch_size, -1, x3.size(-2), x3.size(-1))  # （3，1，8，22，1062）
-            x3 = x3.permute(1, 0, 2, 3, 4).contiguous().view(batch_size, -1, x3.size(-2),x3.size(-1))  # （1，24，22，1062）
-            x3 = self.spatial_conv(x3)  # （1，48，1，132）
-            x3 = self.separable_conv(x3)  # （1，16，1，16）
+            x3 = self.temporal_conv3(x)  
+            x3 = self.ge(x3) 
+            x3 = x3.view((2*self.k + 1), batch_size, -1, x3.size(-2), x3.size(-1))
+            x3 = x3.permute(1, 0, 2, 3, 4).contiguous().view(batch_size, -1, x3.size(-2),x3.size(-1))  
+            x3 = self.spatial_conv(x3)
+            x3 = self.separable_conv(x3) 
 
-            x = torch.cat((x1, x2, x3), 3)# （1，16，1，51）
+            x = torch.cat((x1, x2, x3), 3)
         return x
 
     def forward(self, x):
 
 
-        batch_size = x.size(0)#x(32,22,1125)
-        x = x[:, :, :, None]#（32，22，1125，1）
+        batch_size = x.size(0)
+        x = x[:, :, :, None]
 
-        x1 = self.temporal_conv1(x)#(32,8,22,1158)
-        x1 = self.ge(x1)#（3，256 ，22，1158）
-        x1 = x1.view((2*self.k + 1), batch_size, -1, x1.size(-2), x1.size(-1))#（3，32，8，22，1158）
-        x1 = x1.permute(1, 0, 2, 3, 4).contiguous().view(batch_size, -1, x1.size(-2), x1.size(-1))#（32，24，22，1158）
-        x1 = self.spatial_conv(x1)#（32，48，1，144）
-        x1 = self.separable_conv(x1)#（32，16，1，18）
+        x1 = self.temporal_conv1(x)
+        x1 = self.ge(x1)
+        x1 = x1.view((2*self.k + 1), batch_size, -1, x1.size(-2), x1.size(-1))）
+        x1 = x1.permute(1, 0, 2, 3, 4).contiguous().view(batch_size, -1, x1.size(-2), x1.size(-1))
+        x1 = self.spatial_conv(x1)
+        x1 = self.separable_conv(x1)
 
-        x2 = self.temporal_conv2(x)  # (32,8,22,1126)
-        x2 = self.ge(x2)  # （3，256 ，22，1126）
-        x2 = x2.view((2*self.k + 1), batch_size, -1, x2.size(-2), x2.size(-1))  # （3，32，8，22，1126）
-        x2 = x2.permute(1, 0, 2, 3, 4).contiguous().view(batch_size, -1, x2.size(-2), x2.size(-1))  # （32，24，22，1126）
-        x2 = self.spatial_conv(x2)  # （32，48，1，140）
-        x2 = self.separable_conv(x2)  # （32，16，1，17）
+        x2 = self.temporal_conv2(x) 
+        x2 = self.ge(x2) 
+        x2 = x2.view((2*self.k + 1), batch_size, -1, x2.size(-2), x2.size(-1))  
+        x2 = x2.permute(1, 0, 2, 3, 4).contiguous().view(batch_size, -1, x2.size(-2), x2.size(-1))  
+        x2 = self.spatial_conv(x2) 
+        x2 = self.separable_conv(x2) 
 
-        x3 = self.temporal_conv3(x)  # (32,8,22,1062)
-        x3 = self.ge(x3)  # （3，256 ，22，1062）
-        x3 = x3.view((2*self.k + 1), batch_size, -1, x3.size(-2), x3.size(-1))  # （3，32，8，22，1062）
-        x3 = x3.permute(1, 0, 2, 3, 4).contiguous().view(batch_size, -1, x3.size(-2), x3.size(-1))  # （32，24，22，1062）
-        x3 = self.spatial_conv(x3)  # （32，48，1，132）
-        x3 = self.separable_conv(x3)  # （32，16，1，16）
+        x3 = self.temporal_conv3(x)  
+        x3 = self.ge(x3) 
+        x3 = x3.view((2*self.k + 1), batch_size, -1, x3.size(-2), x3.size(-1)) 
+        x3 = x3.permute(1, 0, 2, 3, 4).contiguous().view(batch_size, -1, x3.size(-2), x3.size(-1)) 
+        x3 = self.spatial_conv(x3)  
+        x3 = self.separable_conv(x3)  
 
         x_cat = torch.cat((x1, x2, x3), 3)
-        x = self.cls(x_cat)  # （32，4）
+        x = self.cls(x_cat) 
 
         return x
 
