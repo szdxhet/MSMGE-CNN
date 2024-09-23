@@ -52,6 +52,6 @@ If used, please cite:
 
 
 # Acknowledgment
-We thank Kaishuo Zhang et al and Schirrmeister et al for their wonderful works.
+We thank Huiyang Wang et al for their wonderful works.
 
 Huiyang Wang, Hua Yu, and Haixian Wang. Eeg_genet: A feature-level graph embedding method for motor imagery classification based on eeg signals. Biocybernetics and Biomedical Engineering, 42(3):1023–1040, 2022.
