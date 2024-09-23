@@ -9,9 +9,9 @@ from braindecode.datautil.iterators import BalancedBatchSizeIterator
 
 from tools.utils import set_seed, set_save_path, Logger, save, load_adj, EarlyStopping
 from tools.run_tools import train_one_epoch_classifier, evaluate_one_epoch_classifier
-from models.multi_scale_multi_graph_nets import EEGGENET
+from models.multi_scale_multi_graph_nets import MSMGECNN
 from tools.data_bciciv2a_tools import load_bciciv2a_data_single_subject
-from tools.data_openBMI_tools import load_openBMI_data_single_subject
+
 
 def run(args):
     # ----------------------------------------------environment setting-----------------------------------------------
@@ -27,26 +27,18 @@ def run(args):
     # ------------------------------------------------data setting----------------------------------------------------
     if 'bci2a'==args.dataset:
         train_X, train_y, test_X, test_y = load_bciciv2a_data_single_subject(args.data_path,subject_id=args.id)
-    elif 'openBMI' == args.dataset:
-        train_X, train_y, test_X, test_y = load_openBMI_data_single_subject(args.data_path,subject_id=args.id)
+   
     iterator = BalancedBatchSizeIterator(batch_size=args.batch_size)
 
     # -----------------------------------------------training setting-------------------------------------------------
 
-    # Adj = torch.eye(22)
-
+    
     if 'bci2a' == args.dataset:
         Adj1 = torch.tensor(load_adj('bciciv2a'), dtype=torch.float32)
         train_data = train_X.permute(0, 2, 1).contiguous().reshape(-1, 22)
         Adj2= torch.tensor(np.corrcoef(train_data.numpy().T, ddof=1), dtype=torch.float32)
-        model_classifier = EEGGENET(Adj1, Adj2, 22, 4, k=args.k, input_time_length=1125, Adj_learn=args.adj_learn,
+        model_classifier = MSMGECNN(Adj1, Adj2, 22, 4, k=args.k, input_time_length=1125, Adj_learn=args.adj_learn,
                                   drop_prob=args.dropout, pool_mode=args.pool, f1=8, f2=16, kernel_length=64)
-    elif 'openBMI' == args.dataset:
-        Adj1 = torch.tensor(load_adj('openbmi'), dtype=torch.float32)
-        train_data = train_X.permute(0, 2, 1).contiguous().reshape(-1, 20)
-        Adj2 = torch.tensor(np.corrcoef(train_data.numpy().T, ddof=1), dtype=torch.float32)
-        model_classifier = EEGGENET(Adj1, Adj2, 20, 2, k=args.k, input_time_length=1000, Adj_learn=args.adj_learn,
-                                    drop_prob=args.dropout, pool_mode=args.pool, f1=8, f2=16, kernel_length=64)
 
     opt_classifier = torch.optim.Adam(model_classifier.parameters(), lr=args.lr, weight_decay=args.w_decay)
     criterion = torch.nn.CrossEntropyLoss()
@@ -90,14 +82,13 @@ def run(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-data_path', type=str,
-                        default='E:\PycharmProjects\paper1_code\EEGGENET-test\EEGGENET-main\data\\bci\\raw\BCICIV_2a_pkl',
-                        choices=['E:\PycharmProjects\paper1_code\EEGGENET-test\EEGGENET-main\data\\bci\\raw\BCICIV_2a_pkl', 'D:\data\openBMI'],
+                        default='',
                         help='The father path of pkl file')
-    parser.add_argument('-dataset', type=str, default='bci2a', choices=['bci2a', 'openBMI'],
+    parser.add_argument('-dataset', type=str, default='bci2a',
                         help='Different datasets correspond to different data processing methods.')
 
     parser.add_argument('-id', type=int, default=9, help='Subject id used to train and test.')
-    parser.add_argument('-adj_learn',  default=False,action='store_false', help='Ajd is trainable')
+    parser.add_argument('-adj_learn',  default=True,action='store_false', help='Ajd is trainable')
     parser.add_argument('-k', type=int, default=1, help='The order of graph embedding')
     parser.add_argument('-pool', type=str, default='mean', choices=['max', 'mean'])
     parser.add_argument('-dropout', type=float, default=0.2, help='Dropout rate.')
