@@ -24,7 +24,7 @@ python tools/data_bciciv2a_tools.py --data_dir ~/dataset/bciciv2a/gdf -output_di
 
 step 2 :Train model
 
-python ho.py -data_dir ~/dataset/bciciv2a/pkl -id 1  or  -data_dir ~/dataset/openBMI -id 1
+python ho.py -data_dir ~/dataset/bciciv2a/pkl -id 1
 
 # Results
 The classification results for our method in three scenarios are as follows:
