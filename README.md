@@ -34,17 +34,6 @@ The classification results for our method in three scenarios are as follows:
 | HO | 67.75 | 73.15 | 70.45 | 76.23 | 78.36 | 77.89 | 79.59 |
 | CV | 75.89 | 72.20 | 73.13 | 79.03 | 81.43 | 88.35 | 88.86 |
 
-## OpenBMI
-| Settings  | FBCSP |  Deep ConvNet | EEGNet | FBCNet |  FBMSNet | EEG_GENet | MSMGE-CNN |
-| :-------- | :---- | ------------- | ------ | ------ | ------- | --------- | --------- |
-| HO |  60.36 |  60.94 | 63.47 | 68.01 | 69.58 | 65.79 | 69.77 |
-| CV | 64.61  | 68.33 | 70.89 | 74.70 | 75.73 | 84.31 | 83.41 |
-
-## HGD
-| Settings  | Shallow ConvNet | GCNs-Net | EEGNet | EEG_GENet | MSMGE-CNN |
-| :-------- | :-------------- | -------- |------- |---------- |---------- |
-| HO | 95.36 | 96.24 | 94.33 | 96.02 | 96.34 |
-
 
 # Cite:
 If used, please cite:
