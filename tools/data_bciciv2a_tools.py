@@ -90,9 +90,7 @@ def process_bbci_data(filename, labels_filename, low_cut_hz):
                                filt_order=3,
                                axis=1), cnt)
 
-    # the experiment results show no benefit from using exponential_running_standardize for bciciv-2a dataset.
-    # cnt = mne_apply(lambda a: exponential_running_standardize(a.T, factor_new=factor_new,
-    #                                                           init_block_size=init_block_size, eps=1e-4).T, cnt)
+  
 
     marker_def = OrderedDict([('Left Hand', [1]), ('Right Hand', [2],),
                               ('Foot', [3]), ('Tongue', [4])])
@@ -122,10 +120,10 @@ def load_bciciv2a_data_single_subject(filename, subject_id, to_tensor=True):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("Gdf to pkl")
     parser.add_argument('-data_dir', type=str,
-                        default='/home/wong/dataset_ubuntu/BCICIV_2a_gdf',
+                        default='/home/BCICIV_2a_gdf',
                         help='Gdf path to load')
     parser.add_argument('-output_dir', type=str,
-                        default='/home/wong/dataset_ubuntu/BCICIV_2a_pkl',
+                        default='/home/BCICIV_2a_pkl',
                         help='Pkl path to save')
     args_ = parser.parse_args()
     main(args_.data_dir, args_.output_dir)
