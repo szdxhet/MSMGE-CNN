@@ -36,9 +36,7 @@ The classification results for our method in three scenarios are as follows:
 
 
 # Cite:
-If used, please cite:
-
-
+If you find this architecture or toolbox useful then please cite this paper: MSMGE-CNN: A multi-scale multi-graph embedding convolutional neural network for motor related EEG decoding
 
 # Acknowledgment
 We thank Huiyang Wang et al for their wonderful works.
