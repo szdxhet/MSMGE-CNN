@@ -119,8 +119,8 @@ class GraphEmbedding(nn.Module):
 
         edge_weight1 = edge_weight1 + edge_weight1.T + th.eye(self.n_nodes, dtype=edge_weight1.dtype, device=x.device)
         edge_weight2 = edge_weight2 + edge_weight2.T + th.eye(self.n_nodes, dtype=edge_weight2.dtype, device=x.device)
-        edge_weight1 = normalize_adj(edge_weight1, mode='row')
-        edge_weight2 = normalize_adj(edge_weight2, mode='row')
+        edge_weight1 = normalize_adj(edge_weight1, mode='sym')
+        edge_weight2 = normalize_adj(edge_weight2, mode='sym')
         x_out = [x]
 
         edge_weight1_iter = edge_weight1
