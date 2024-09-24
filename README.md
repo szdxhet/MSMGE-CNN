@@ -1,5 +1,5 @@
 # MSMGE-CNN: A multi-scale multi-graph embedding convolutional neural network for motor related EEG decoding
-This is the PyTorch implementation of the MSMGE-CNN architecture for EEG-MI classification.
+This is the PyTorch implementation of the MSMGE-CNN architecture for MI/ME-EEG classification.
 ![](https://github.com/a0304w99/MSMGE-CNN/blob/main/MSMGE-CNN.png)
 
 # Resources
