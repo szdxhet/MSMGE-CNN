@@ -29,9 +29,9 @@ python ho.py -data_dir ~/dataset/bciciv2a/pkl -id 1
 # Results
 The average accuracy (%) in the HO analysis of the BCICIV-2a dataset compared to the state-of-the-art method is shown below:
 ## BCICIV-2a
-| Settings  | FBCSP |  Deep ConvNet | EEGNet | FBCNet | FBMSNet | EEG_GENet | MSMGE-CNN |
-| :-------- | :---- | ------------- | ------ | ------ | ------- | --------- | --------- |
-| HO | 67.75 | 73.15 | 70.45 | 76.23 | 78.36 | 77.89 | 79.59 |
+ | FBCSP |  Deep ConvNet | EEGNet | FBCNet | FBMSNet | EEG_GENet | MSMGE-CNN |
+ | :---- | ------------- | ------ | ------ | ------- | --------- | --------- |
+ | 67.75 | 73.15 | 70.45 | 76.23 | 78.36 | 77.89 | 79.59 |
 
 
 # Cite:
